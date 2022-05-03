@@ -26,7 +26,15 @@ function init(plugin)
     --     plugin.preferences.count = 0
     -- end
 
-    local dialog = Dialog("            OkLab Color Picker            ")
+    local output_dialog = Dialog("                    Color Values                    ")
+    output_dialog:entry {
+        id = "ok-output",
+        label = "sRGB",
+        text = "",
+        focus = true
+    }
+
+    local dialog = Dialog("                    OkLab Color Picker                    ")
 
     local function update_color()
         local hue = dialog.data["ok-hue"]
@@ -64,6 +72,12 @@ function init(plugin)
         data["ok-saturation"] = saturation
         data["ok-lightness"] = lightness
         dialog.data = data
+
+        local fg = app.fgColor
+        local output_data = output_dialog.data
+        output_data["ok-output"] =
+            string.format("%1.9f, %1.9f, %1.9f", fg.red / 255.0, fg.green / 255.0, fg.blue / 255.0)
+        output_dialog.data = output_data
     end
 
     dialog:color {
@@ -99,7 +113,7 @@ function init(plugin)
         onchange = update_color
     }
 
-    function update_dialog()
+    local function update_dialog()
         local data = dialog.data
         local fg = app.fgColor
         local okhsl = ok_color.srgb_to_okhsl(colorToRGB(fg))
@@ -108,6 +122,10 @@ function init(plugin)
         data["ok-saturation"] = okhsl.s * 100
         data["ok-lightness"] = okhsl.l * 100
         dialog.data = data
+        local output_data = output_dialog.data
+        output_data["ok-output"] =
+            string.format("%1.9f, %1.9f, %1.9f", fg.red / 255.0, fg.green / 255.0, fg.blue / 255.0)
+        output_dialog.data = output_data
     end
 
     --
@@ -119,6 +137,16 @@ function init(plugin)
             -- plugin.preferences.count = plugin.preferences.count + 1
             update_dialog()
             dialog:show {wait = false}
+        end
+    }
+    plugin:newCommand {
+        id = "ColorValues",
+        title = "Color Values",
+        group = "palette_main",
+        onclick = function()
+            -- plugin.preferences.count = plugin.preferences.count + 1
+            update_dialog()
+            output_dialog:show {wait = false}
         end
     }
 
