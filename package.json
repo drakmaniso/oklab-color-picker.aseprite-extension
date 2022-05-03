@@ -1,0 +1,24 @@
+{
+    "name": "oklab-color-picker",
+    "displayName": "OkLab Color Picker",
+    "description": "Color picker based on the OkLab color space",
+    "version": "0.1",
+    "author": {
+        "name": "Laurent Moussault",
+        "email": "moussault.laurent@gmail.com",
+        "url": ""
+    },
+    "contributors": [],
+    "publisher": "drakmaniso",
+    "license": "CC-BY-4.0",
+    "categories": [
+        "Scripts"
+    ],
+    "contributes": {
+        "scripts": [
+            {
+                "path": "./main.lua"
+            }
+        ]
+    }
+}
