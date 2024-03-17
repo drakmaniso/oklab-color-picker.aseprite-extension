@@ -111,10 +111,171 @@ end
 local STEPS_C = 8.0
 local STEPS_L = 32.0
 
-local function open_okhcl_dialog()
-    dialog = Dialog {title = "OkHCL", notitlebar = false}
+local function open_okhcl_dialog(bounds)
+    dialog =
+        Dialog {
+        title = "OkHCL",
+        notitlebar = false
+    }
 
     update_state()
+
+    dialog:canvas {
+        id = "hue",
+        width = 16,
+        height = 12,
+        vexpand = false,
+        autoscaling = true,
+        focus = true,
+        onpaint = function(ev)
+            local gc = ev.context
+            if state.is_hue_pressed then
+                gc.color = app.theme.color.hot_face
+            else
+                gc.color = app.theme.color.face
+            end
+            gc:fillRect(Rectangle(0, 0, gc.width, gc.height))
+            gc.color = app.theme.color.text
+            local text = string.format("%d", state.hue)
+            local measure = gc:measureText(text)
+            local x = 1 + (gc.width - measure.width) / 2
+            local y = 1 + (gc.height - measure.height) / 2
+            gc:fillText(text, x, y)
+        end,
+        onmousedown = function(ev)
+            state.is_hue_pressed = true
+            state.pressed_hue = state.hue
+            state.pressed_x = ev.x
+            state.pressed_y = ev.y
+            dialog:repaint()
+        end,
+        onmouseup = function(ev)
+            local delta = ev.y - state.pressed_y
+            state.hue = wrap(state.pressed_hue - (delta / 2.0), 0, 360)
+            state.is_hue_pressed = false
+            round_state()
+            update_color()
+        end,
+        onmousemove = function(ev)
+            if state.is_hue_pressed then
+                local delta = ev.y - state.pressed_y
+                state.hue = wrap(state.pressed_hue - (delta / 2.0), 0, 360)
+                round_state()
+                dialog:repaint()
+            end
+        end,
+        onwheel = function(ev)
+            state.hue = wrap(state.hue - ev.deltaY, 0, 360)
+            round_state()
+            update_color()
+        end
+    }
+
+    dialog:canvas {
+        id = "chroma",
+        width = 16,
+        height = 12,
+        vexpand = false,
+        autoscaling = true,
+        onpaint = function(ev)
+            local gc = ev.context
+            if state.is_chroma_pressed then
+                gc.color = app.theme.color.hot_face
+            else
+                gc.color = app.theme.color.face
+            end
+            gc:fillRect(Rectangle(0, 0, gc.width, gc.height))
+            gc.color = app.theme.color.text
+            local text = string.format("%d", state.chroma)
+            local width = gc:measureText(text).width
+            local measure = gc:measureText(text)
+            local x = 1 + (gc.width - measure.width) / 2
+            local y = 1 + (gc.height - measure.height) / 2
+            gc:fillText(text, x, y)
+        end,
+        onmousedown = function(ev)
+            state.is_chroma_pressed = true
+            state.pressed_chroma = state.chroma
+            state.pressed_x = ev.x
+            state.pressed_y = ev.y
+            dialog:repaint()
+        end,
+        onmouseup = function(ev)
+            local delta = ev.y - state.pressed_y
+            state.chroma = clamp(state.pressed_chroma - (delta / 2.0), 0, 255)
+            state.is_chroma_pressed = false
+            round_state()
+            update_color()
+        end,
+        onmousemove = function(ev)
+            if state.is_chroma_pressed then
+                local delta = ev.y - state.pressed_y
+                state.chroma = clamp(state.pressed_chroma - (delta / 2.0), 0, 255)
+                round_state()
+                dialog:repaint()
+            end
+        end,
+        onwheel = function(ev)
+            state.chroma = clamp(state.chroma - ev.deltaY, 0, 255)
+            round_state()
+            update_color()
+            dialog:repaint()
+        end
+    }
+
+    dialog:canvas {
+        id = "lightness",
+        width = 16,
+        height = 12,
+        vexpand = false,
+        autoscaling = true,
+        onpaint = function(ev)
+            local gc = ev.context
+            if state.is_lightness_pressed then
+                gc.color = app.theme.color.hot_face
+            else
+                gc.color = app.theme.color.face
+            end
+            gc:fillRect(Rectangle(0, 0, gc.width, gc.height))
+            gc.color = app.theme.color.text
+            local text = string.format("%d", state.lightness)
+            local width = gc:measureText(text).width
+            local measure = gc:measureText(text)
+            local x = 1 + (gc.width - measure.width) / 2
+            local y = 1 + (gc.height - measure.height) / 2
+            gc:fillText(text, x, y)
+        end,
+        onmousedown = function(ev)
+            state.is_lightness_pressed = true
+            state.pressed_lightness = state.lightness
+            state.pressed_x = ev.x
+            state.pressed_y = ev.y
+            dialog:repaint()
+        end,
+        onmouseup = function(ev)
+            local delta = ev.y - state.pressed_y
+            state.lightness = clamp(state.pressed_lightness - (delta / 2.0), 0, 255)
+            state.is_lightness_pressed = false
+            round_state()
+            update_color()
+        end,
+        onmousemove = function(ev)
+            if state.is_lightness_pressed then
+                local delta = ev.y - state.pressed_y
+                state.lightness = clamp(state.pressed_lightness - (delta / 2.0), 0, 255)
+                round_state()
+                dialog:repaint()
+            end
+        end,
+        onwheel = function(ev)
+            state.lightness = clamp(state.lightness - ev.deltaY, 0, 255)
+            round_state()
+            update_color()
+            dialog:repaint()
+        end
+    }
+
+    dialog:newrow()
 
     dialog:canvas {
         id = "color",
@@ -234,163 +395,6 @@ local function open_okhcl_dialog()
             dialog:repaint()
         end
     }
-
-    dialog:newrow()
-
-    dialog:canvas {
-        id = "hue",
-        width = 16,
-        height = 12,
-        vexpand = false,
-        autoscaling = true,
-        focus = true,
-        onpaint = function(ev)
-            local gc = ev.context
-            if state.is_hue_pressed then
-                gc.color = Color {r = 180, g = 180, b = 180, a = 255}
-            else
-                gc.color = Color {r = 222, g = 222, b = 222, a = 255}
-            end
-            gc:fillRect(Rectangle(0, 0, gc.width, gc.height))
-            gc.color = Color {r = 0, g = 0, b = 0, a = 255}
-            local text = string.format("%d", state.hue)
-            local measure = gc:measureText(text)
-            local x = 1 + (gc.width - measure.width) / 2
-            local y = 1 + (gc.height - measure.height) / 2
-            gc:fillText(text, x, y)
-        end,
-        onmousedown = function(ev)
-            state.is_hue_pressed = true
-            state.pressed_hue = state.hue
-            state.pressed_x = ev.x
-            state.pressed_y = ev.y
-            dialog:repaint()
-        end,
-        onmouseup = function(ev)
-            local delta = ev.y - state.pressed_y
-            state.hue = wrap(state.pressed_hue - (delta / 2.0), 0, 360)
-            state.is_hue_pressed = false
-            round_state()
-            update_color()
-        end,
-        onmousemove = function(ev)
-            if state.is_hue_pressed then
-                local delta = ev.y - state.pressed_y
-                state.hue = wrap(state.pressed_hue - (delta / 2.0), 0, 360)
-                round_state()
-                dialog:repaint()
-            end
-        end,
-        onwheel = function(ev)
-            state.hue = wrap(state.hue - ev.deltaY, 0, 360)
-            round_state()
-            update_color()
-        end
-    }
-
-    dialog:canvas {
-        id = "chroma",
-        width = 16,
-        height = 12,
-        vexpand = false,
-        autoscaling = true,
-        onpaint = function(ev)
-            local gc = ev.context
-            if state.is_chroma_pressed then
-                gc.color = Color {r = 180, g = 180, b = 180, a = 255}
-            else
-                gc.color = Color {r = 222, g = 222, b = 222, a = 255}
-            end
-            gc:fillRect(Rectangle(0, 0, gc.width, gc.height))
-            gc.color = Color {r = 0, g = 0, b = 0, a = 255}
-            local text = string.format("%d", state.chroma)
-            local width = gc:measureText(text).width
-            local measure = gc:measureText(text)
-            local x = 1 + (gc.width - measure.width) / 2
-            local y = 1 + (gc.height - measure.height) / 2
-            gc:fillText(text, x, y)
-        end,
-        onmousedown = function(ev)
-            state.is_chroma_pressed = true
-            state.pressed_chroma = state.chroma
-            state.pressed_x = ev.x
-            state.pressed_y = ev.y
-            dialog:repaint()
-        end,
-        onmouseup = function(ev)
-            local delta = ev.y - state.pressed_y
-            state.chroma = clamp(state.pressed_chroma - (delta / 2.0), 0, 255)
-            state.is_chroma_pressed = false
-            round_state()
-            update_color()
-        end,
-        onmousemove = function(ev)
-            if state.is_chroma_pressed then
-                local delta = ev.y - state.pressed_y
-                state.chroma = clamp(state.pressed_chroma - (delta / 2.0), 0, 255)
-                round_state()
-                dialog:repaint()
-            end
-        end,
-        onwheel = function(ev)
-            state.chroma = clamp(state.chroma - ev.deltaY, 0, 255)
-            round_state()
-            update_color()
-            dialog:repaint()
-        end
-    }
-
-    dialog:canvas {
-        id = "lightness",
-        width = 16,
-        height = 12,
-        vexpand = false,
-        autoscaling = true,
-        onpaint = function(ev)
-            local gc = ev.context
-            if state.is_lightness_pressed then
-                gc.color = Color {r = 180, g = 180, b = 180, a = 255}
-            else
-                gc.color = Color {r = 222, g = 222, b = 222, a = 255}
-            end
-            gc:fillRect(Rectangle(0, 0, gc.width, gc.height))
-            gc.color = Color {r = 0, g = 0, b = 0, a = 255}
-            local text = string.format("%d", state.lightness)
-            local width = gc:measureText(text).width
-            local measure = gc:measureText(text)
-            local x = 1 + (gc.width - measure.width) / 2
-            local y = 1 + (gc.height - measure.height) / 2
-            gc:fillText(text, x, y)
-        end,
-        onmousedown = function(ev)
-            state.is_lightness_pressed = true
-            state.pressed_lightness = state.lightness
-            state.pressed_x = ev.x
-            state.pressed_y = ev.y
-            dialog:repaint()
-        end,
-        onmouseup = function(ev)
-            local delta = ev.y - state.pressed_y
-            state.lightness = clamp(state.pressed_lightness - (delta / 2.0), 0, 255)
-            state.is_lightness_pressed = false
-            round_state()
-            update_color()
-        end,
-        onmousemove = function(ev)
-            if state.is_lightness_pressed then
-                local delta = ev.y - state.pressed_y
-                state.lightness = clamp(state.pressed_lightness - (delta / 2.0), 0, 255)
-                round_state()
-                dialog:repaint()
-            end
-        end,
-        onwheel = function(ev)
-            state.lightness = clamp(state.lightness - ev.deltaY, 0, 255)
-            round_state()
-            update_color()
-            dialog:repaint()
-        end
-    }
 end
 
 function init(plugin)
@@ -400,11 +404,32 @@ function init(plugin)
         group = "palette_main",
         onclick = function()
             dialog:show {wait = false}
+            local bounds = plugin.preferences.okhcl_dialog_bounds
+            if bounds ~= nil then
+                bounds = Rectangle(bounds.x, bounds.y, bounds.width, bounds.height)
+                plugin.preferences.okhcl_dialog_bounds = nil
+            else
+                bounds = dialog.bounds
+            end
+            if bounds.width < 128 then
+                bounds.width = 216
+            end
+            if bounds.height < 64 then
+                bounds.height = 440
+            end
+            if bounds.x + bounds.width > app.window.width + 16 then
+                bounds.x = app.window.width - bounds.width
+            end
+            if bounds.y + bounds.height > app.window.height + 16 then
+                bounds.y = app.window.height - bounds.height
+            end
+            dialog.bounds = bounds
             update_dialog()
         end
     }
 
     open_okhcl_dialog()
+
     app.events:on("sitechange", update_dialog)
     app.events:on("fgcolorchange", update_dialog)
     app.events:on(
@@ -418,4 +443,12 @@ function init(plugin)
 end
 
 function exit(plugin)
+    if dialog.bounds ~= nil and not dialog.bounds.isEmpty then
+        plugin.preferences.okhcl_dialog_bounds = {
+            x = dialog.bounds.x,
+            y = dialog.bounds.y,
+            width = dialog.bounds.width,
+            height = dialog.bounds.height
+        }
+    end
 end
