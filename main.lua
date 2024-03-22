@@ -279,9 +279,10 @@ local function open_okhcl_dialog(bounds)
 
     dialog:canvas {
         id = "color",
-        width = 64,
+        width = 90,
         height = 32,
-        vexpand = false,
+        hexpand = true,
+        vexpand = true,
         autoscaling = true,
         onpaint = function(ev)
             local gc = ev.context
@@ -295,10 +296,62 @@ local function open_okhcl_dialog(bounds)
     dialog:newrow()
 
     dialog:canvas {
+        id = "hue-slider",
+        width = 11,
+        height = 4 * STEPS_L,
+        hexpand = false,
+        vexpand = false,
+        autoscaling = true,
+        focus = true,
+        onpaint = function(ev)
+            local gc = ev.context
+            local h = gc.height / STEPS_L
+            for i = 0, STEPS_L do
+                gc.color = HCLToColor(((STEPS_L - i) / STEPS_L) * 360.0, state.chroma, state.lightness)
+                gc:fillRect(Rectangle(0, i * h, gc.height, h + 1))
+            end
+            local y = ((360.0 - state.hue) / 360.0) * gc.height
+            local x = (gc.width - 7) / 2
+            if state.lightness < 128 then
+                gc.color = Color {r = 255, g = 255, b = 255, a = 128}
+            else
+                gc.color = Color {r = 0, g = 0, b = 0, a = 128}
+            end
+            gc:strokeRect(Rectangle(x + 1, y - 2, 5, 5))
+        end,
+        onmousedown = function(ev)
+            state.is_hue_slider_pressed = true
+            state.hue = wrap(((state.height - ev.y) / state.height) * 360.0, 0.0, 360.0)
+            round_state()
+            dialog:repaint()
+        end,
+        onmouseup = function(ev)
+            state.is_hue_slider_pressed = false
+            state.hue = wrap(((state.height - ev.y) / state.height) * 360.0, 0.0, 360.0)
+            round_state()
+            update_color()
+        end,
+        onmousemove = function(ev)
+            if state.is_hue_slider_pressed then
+                state.hue = wrap(((state.height - ev.y) / state.height) * 360.0, 0.0, 360.0)
+                round_state()
+                dialog:repaint()
+            end
+        end,
+        onwheel = function(ev)
+            state.hue = wrap(state.hue - ev.deltaY, 0, 360)
+            round_state()
+            update_color()
+            dialog:repaint()
+        end
+    }
+
+    dialog:canvas {
         id = "chroma-lightness-slider",
-        width = 96,
-        height = 128,
-        vexpand = true,
+        width = 72,
+        height = 4 * STEPS_L,
+        hexpand = true,
+        vexpand = false,
         autoscaling = true,
         focus = true,
         onpaint = function(ev)
@@ -344,57 +397,6 @@ local function open_okhcl_dialog(bounds)
             end
         end
     }
-
-    dialog:newrow()
-
-    dialog:canvas {
-        id = "hue-slider",
-        width = 64,
-        height = 13,
-        vexpand = false,
-        autoscaling = true,
-        focus = true,
-        onpaint = function(ev)
-            local gc = ev.context
-            local w = gc.width / 32.0
-            for i = 0, 32.0 do
-                gc.color = HCLToColor((i / 32.0) * 360.0, state.chroma, state.lightness)
-                gc:fillRect(Rectangle(i * w, 0, w + 1, gc.height))
-            end
-            local x = (state.hue / 360.0) * gc.width
-            local y = (gc.height - 7) / 2
-            if state.lightness < 128 then
-                gc.color = Color {r = 255, g = 255, b = 255, a = 128}
-            else
-                gc.color = Color {r = 0, g = 0, b = 0, a = 128}
-            end
-            gc:strokeRect(Rectangle(x - 2, y + 1, 5, 5))
-        end,
-        onmousedown = function(ev)
-            state.is_hue_slider_pressed = true
-            state.hue = wrap((ev.x / state.width) * 360.0, 0.0, 360.0)
-            dialog:repaint()
-        end,
-        onmouseup = function(ev)
-            state.is_hue_slider_pressed = false
-            state.hue = wrap((ev.x / state.width) * 360.0, 0.0, 360.0)
-            round_state()
-            update_color()
-        end,
-        onmousemove = function(ev)
-            if state.is_hue_slider_pressed then
-                state.hue = wrap((ev.x / state.width) * 360.0, 0.0, 360.0)
-                round_state()
-                dialog:repaint()
-            end
-        end,
-        onwheel = function(ev)
-            state.hue = wrap(state.hue - ev.deltaY, 0, 360)
-            round_state()
-            update_color()
-            dialog:repaint()
-        end
-    }
 end
 
 function init(plugin)
@@ -412,10 +414,10 @@ function init(plugin)
                 bounds = dialog.bounds
             end
             if bounds.width < 128 then
-                bounds.width = 216
+                bounds.width = 204
             end
             if bounds.height < 64 then
-                bounds.height = 440
+                bounds.height = 406
             end
             if bounds.x + bounds.width > app.window.width + 16 then
                 bounds.x = app.window.width - bounds.width
